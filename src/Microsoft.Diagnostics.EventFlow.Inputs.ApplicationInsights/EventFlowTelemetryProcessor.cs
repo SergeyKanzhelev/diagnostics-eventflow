@@ -154,7 +154,21 @@ namespace Microsoft.Diagnostics.EventFlow.ApplicationInsights
 
                 // TODO: also add values from ISupportMetrics when that interface becomes public
 
-                currentInput.OnNext(eventData);
+                try
+                {
+                    // this monitor sets the thread context to avoid reporting 
+                    // Elastic Search http communication as a dependency telemetry.
+                    // Ideally it should be set on a small scope of immidiate call to Elastic Search.
+                    // Keeping it more general for so we do not need to include a reference to
+                    // ApplicaitonInsights NuGet from Elastic Search output NuGet
+                    SdkInternalOperationsMonitor.Enter();
+
+                    currentInput.OnNext(eventData);
+                }
+                finally
+                {
+                    SdkInternalOperationsMonitor.Exit();
+                }
             }
             finally
             {
